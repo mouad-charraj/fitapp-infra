@@ -1,0 +1,14 @@
+# Copy to terraform.tfvars (git-ignored) and adjust. Every value has a sane default.
+
+location     = "swedencentral"
+worker_count = 1 # 1 for daily work / first demo, 2 for the final demo
+
+# master_size = "Standard_B2als_v2" # 2 vCPU / 4 GB
+# worker_size = "Standard_B2as_v2"  # 2 vCPU / 8 GB
+
+# Leave empty to auto-detect your current public IP. Add teammates' IPs if they need SSH/kubectl.
+# admin_cidrs = ["196.x.x.x/32"]
+
+# ssh_public_key_path = "~/.ssh/fitapp_azure.pub"
+
+# auto_shutdown_time = "2300"

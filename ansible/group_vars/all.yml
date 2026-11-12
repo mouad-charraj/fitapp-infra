@@ -1,0 +1,20 @@
+---
+# ---------------------------------------------------------------- k3s ----
+k3s_version: "v1.37.2+k3s1"     # pinned: same version on every rebuild
+k3s_master_schedulable: true    # let app pods run on the master too (we only have 1-2 workers)
+
+# ----------------------------------------------------------- Argo CD ----
+argocd_install: true
+argocd_version: "v3.6.1"        # pinned
+
+# Leave empty until the fitapp-gitops repo exists. When set, Ansible creates the
+# "root" Argo CD Application (app-of-apps) pointing at <repo>/<path>.
+gitops_repo_url: "https://github.com/mouad-charraj/fitapp-gitops.git"
+gitops_repo_revision: "main"
+gitops_repo_path: "bootstrap"
+
+# ------------------------------------------------------------- local ----
+kubeconfig_local_path: "{{ lookup('ansible.builtin.env', 'HOME') }}/.kube/fitapp-azure.yaml"
+
+# -------------------------------------------------------------- base ----
+node_timezone: "Africa/Casablanca"

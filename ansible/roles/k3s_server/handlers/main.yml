@@ -1,0 +1,7 @@
+---
+- name: Restart k3s
+  ansible.builtin.systemd_service:
+    name: k3s
+    state: restarted
+  # On the very first run the service does not exist yet when the config is written.
+  failed_when: false

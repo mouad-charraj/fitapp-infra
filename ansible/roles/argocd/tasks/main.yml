@@ -1,0 +1,43 @@
+---
+# Argo CD is the ONLY thing installed into Kubernetes by Ansible.
+# Everything else inside the cluster is installed by Argo CD from the fitapp-gitops repo.
+
+- name: Create the argocd namespace
+  ansible.builtin.command: k3s kubectl create namespace argocd
+  register: ns_result
+  changed_when: ns_result.rc == 0
+  failed_when: ns_result.rc != 0 and 'AlreadyExists' not in ns_result.stderr
+
+- name: Install Argo CD {{ argocd_version }} (official manifest, pinned version)
+  # --server-side is required: some Argo CD CRDs are too large for client-side apply.
+  ansible.builtin.command: >
+    k3s kubectl apply -n argocd --server-side --force-conflicts
+    -f https://raw.githubusercontent.com/argoproj/argo-cd/{{ argocd_version }}/manifests/install.yaml
+  changed_when: false # declarative apply, safe to repeat
+
+- name: Wait for Argo CD components
+  ansible.builtin.command: k3s kubectl -n argocd rollout status {{ item }} --timeout=300s
+  loop:
+    - deployment/argocd-server
+    - deployment/argocd-repo-server
+    - statefulset/argocd-application-controller
+  changed_when: false
+
+- name: Render the root (app-of-apps) Application
+  ansible.builtin.template:
+    src: root-app.yaml.j2
+    dest: /root/argocd-root-app.yaml
+    mode: "0600"
+  when: gitops_repo_url | length > 0
+
+- name: Apply the root Application -> Argo CD starts syncing the gitops repo
+  ansible.builtin.command: k3s kubectl apply -f /root/argocd-root-app.yaml
+  when: gitops_repo_url | length > 0
+  changed_when: false
+
+- name: Argo CD access
+  ansible.builtin.debug:
+    msg:
+      - "UI (from your laptop):  kubectl -n argocd port-forward svc/argocd-server 8080:443  ->  https://localhost:8080"
+      - "User: admin   Password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+      - "{{ 'Root app synced from ' ~ gitops_repo_url if gitops_repo_url | length > 0 else 'No gitops repo yet: set gitops_repo_url in group_vars/all.yml and re-run.' }}"

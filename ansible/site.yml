@@ -1,0 +1,44 @@
+---
+# Full configuration of the cluster, in order. Idempotent: safe to run again any time.
+#   ansible-playbook site.yml
+
+- name: 0. Wait until every VM is up and cloud-init has finished
+  hosts: k3s_cluster
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    - name: Wait for cloud-init (holds the apt lock on first boot)
+      ansible.builtin.command: cloud-init status --wait
+      become: true
+      register: cloud_init
+      changed_when: false
+      failed_when: cloud_init.rc not in [0, 2] # 2 = finished with recoverable warnings
+
+- name: 1. Base OS hardening on all nodes
+  hosts: k3s_cluster
+  become: true
+  roles:
+    - common
+
+- name: 2. k3s server (control plane)
+  hosts: master
+  become: true
+  roles:
+    - k3s_server
+
+- name: 3. k3s agents (workers join the cluster)
+  hosts: workers
+  become: true
+  roles:
+    - k3s_agent
+
+- name: 4. Kubeconfig for your laptop + Argo CD bootstrap
+  hosts: master
+  become: true
+  roles:
+    - kubeconfig
+    - role: argocd
+      when: argocd_install | bool

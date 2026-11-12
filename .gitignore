@@ -1,0 +1,26 @@
+# --- Terraform ---
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+# real variable files may contain personal data (email, IPs) -> keep only the examples in git
+*.tfvars
+!*.tfvars.example
+# NOTE: .terraform.lock.hcl IS committed (pins exact provider versions for the whole team)
+
+# --- Ansible (generated at runtime) ---
+ansible/inventory/hosts.ini
+ansible/.known_hosts
+*.retry
+
+# --- Kubernetes credentials ---
+*.kubeconfig
+kubeconfig*
+
+# --- Misc ---
+.DS_Store
+.vscode/
+.idea/
